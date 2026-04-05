@@ -6,19 +6,27 @@ os.environ.setdefault("ESCDELAY", "10")
 PACKAGES = {
     "Base System":        ["base", "base-devel", "linux", "linux-firmware", "linux-headers"],
     "Desktop":            ["xfce4", "i3-wm"],
-    "Network":            ["networkmanager", "openssh", "wget", "curl", "connman"],
-    "Filesystem Tools":   ["btrfs-progs", "exfatprogs"],
+    "Network":            ["networkmanager", "openssh", "wget", "curl", "nftables", "connman"],
+    "Filesystem Tools":   ["btrfs-progs", "e2fsprogs", "dosfstools", "exfatprogs"],
     "Bootloader":         ["grub"],
     "Multimedia":         ["pipewire", "wireplumber", "ffmpeg", "vlc"],
     "Browsers":           ["firefox", "librewolf"],
-    "Tools":              ["emac", "vim", "vscodium",],
+    "Tools":              ["emacs", "vim", "vscodium"],
 }
 
+TIMEZONES = [
+    "UTC-12", "UTC-11", "UTC-10", "UTC-9",  "UTC-8",  "UTC-7",  "UTC-6",
+    "UTC-5",  "UTC-4",  "UTC-3",  "UTC-2",  "UTC-1",  "UTC+0",  "UTC+1",
+    "UTC+2",  "UTC+3",  "UTC+4",  "UTC+5",  "UTC+5:30","UTC+6", "UTC+7",
+    "UTC+8",  "UTC+9",  "UTC+10", "UTC+11", "UTC+12",
+]
+
 MENU = [
-    ("packages", "Select packages"),
-    ("users",    "Manage users"),
-    ("install",  "Review and install"),
-    ("quit",     "Quit"),
+    ("packages",  "Select packages"),
+    ("users",     "Manage users"),
+    ("timezone",  "Select timezone"),
+    ("install",   "Review and install"),
+    ("quit",      "Quit"),
 ]
 
 W = N = H = G = Y = B = 0
@@ -86,7 +94,7 @@ def menu(s, title, items, descs=None, toggle=False, checked=None):
                     if dx > len(line) + 6:
                         put(s, y, dx, descs[idx], N | curses.A_DIM)
 
-        hint = f"up/down  space/enter=toggle  esc=back  ({len(chk)} selected)" if toggle else "↑up/down↓  ↳ enter=select  esc=back"
+        hint = "↑up/down↓  ↳ enter=select  esc=back  (1 max)" if toggle else "↑up/down↓  ↳ enter=select  esc=back"
         bar(s, hint)
         s.refresh()
         k = s.getch()
@@ -222,6 +230,46 @@ def edit_user(s, users, idx):
         if yesno(s, f"Delete '{u['name']}'?"): users.pop(idx)
 
 
+def do_timezone(s, tz):
+    chk = {TIMEZONES.index(tz[0])} if tz else set()
+    sel, scroll = (TIMEZONES.index(tz[0]) if tz else 0), 0
+
+    while True:
+        h, w = s.getmaxyx()
+        rows = h - 6
+        s.erase()
+        header(s)
+        put(s, 2, 2, "Select timezone", W | curses.A_BOLD)
+        put(s, 3, 0, "-" * (w - 1), N)
+
+        for i in range(rows):
+            idx = scroll + i
+            if idx >= len(TIMEZONES): break
+            mark = "[*] " if idx in chk else "[ ] "
+            line = mark + TIMEZONES[idx]
+            if idx == sel:
+                put(s, 4 + i, 0, (" " + line).ljust(w - 1), H)
+            else:
+                put(s, 4 + i, 2, line, G if idx in chk else W)
+
+        bar(s, "↑up/down↓  ↳ enter/space=select  esc=back  (pick one)")
+        s.refresh()
+        k = s.getch()
+
+        if k == curses.KEY_UP and sel > 0:
+            sel -= 1
+            if sel < scroll: scroll -= 1
+        elif k == curses.KEY_DOWN and sel < len(TIMEZONES) - 1:
+            sel += 1
+            if sel >= scroll + rows: scroll += 1
+        elif k in (ord(' '), 10, 13, curses.KEY_ENTER):
+            chk = {sel}
+            tz.clear()
+            tz.append(TIMEZONES[sel])
+        elif k == 27:
+            return
+
+
 def do_install(s, selected):
     if not selected:
         notice(s, ["No packages selected.", "Go back and pick something.", "", "press any key..."]); return
@@ -253,21 +301,23 @@ def run_install(s, pkgs):
 def main(s):
     colors()
     curses.curs_set(0)
-    selected, users = set(), []
+    selected, users, tz = set(), [], []
 
     while True:
         descs = [
             f"{len(selected)} packages selected",
             ", ".join(u["name"] for u in users) or "no users added",
+            tz[0] if tz else "not set",
             "Review and start the install",
             "Exit",
         ]
         choice = menu(s, "Main menu", [m[1] for m in MENU], descs)
         if choice == -1: continue
         action = MENU[choice][0]
-        if action == "packages": do_packages(s, selected)
-        elif action == "users":  do_users(s, users)
-        elif action == "install": do_install(s, selected)
+        if action == "packages":   do_packages(s, selected)
+        elif action == "users":    do_users(s, users)
+        elif action == "timezone": do_timezone(s, tz)
+        elif action == "install":  do_install(s, selected)
         elif action == "quit":
             if yesno(s, "Quit? Nothing has been written to disk."): break
 
