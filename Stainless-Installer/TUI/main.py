@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from config import write_config
 import os, curses, re
 os.environ.setdefault("ESCDELAY", "10")
 
@@ -252,7 +252,7 @@ def do_timezone(s, tz):
             else:
                 put(s, 4 + i, 2, line, G if idx in chk else W)
 
-        bar(s, "↑up/down↓  ↳ enter/space=select  esc=back  (pick one)")
+        bar(s, "up/down  enter/space=select  esc=back  (pick one)")
         s.refresh()
         k = s.getch()
 
@@ -282,7 +282,8 @@ def do_install(s, selected):
             run_install(s, pkgs); return
 
 
-def run_install(s, pkgs):
+def run_install(s, pkgs, users, tz):
+    write_config(pkgs, users, tz)
     h, _ = s.getmaxyx()
     s.erase(); header(s)
     put(s, 2, 2, "Installing...", W | curses.A_BOLD)
