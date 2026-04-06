@@ -11,8 +11,11 @@ PACKAGES = {
     "Bootloader":         ["grub"],
     "Multimedia":         ["pipewire", "wireplumber", "ffmpeg", "vlc"],
     "Browsers":           ["firefox", "librewolf"],
-    "Tools":              ["emacs", "vim", "vscodium"],
+    "Tools":              ["emacs", "vim", "vscodium", "git"], 
 }
+
+#To add a package you just write in "Package-list":              ["package"], or if you want multiple you can also do "Package-list":              ["package1", "package2"],
+#Shouldn't be too hard i guess.
 
 TIMEZONES = [
     "UTC-12", "UTC-11", "UTC-10", "UTC-9",  "UTC-8",  "UTC-7",  "UTC-6",
@@ -20,6 +23,7 @@ TIMEZONES = [
     "UTC+2",  "UTC+3",  "UTC+4",  "UTC+5",  "UTC+5:30","UTC+6", "UTC+7",
     "UTC+8",  "UTC+9",  "UTC+10", "UTC+11", "UTC+12",
 ]
+#I am sure that this should be pretty self explained. If you are going to contribute and add forexample countries to the next of the timezone. Do: "UTC+(time), (country)"
 
 MENU = [
     ("packages",  "Select packages"),
@@ -28,6 +32,7 @@ MENU = [
     ("install",   "Review and install"),
     ("quit",      "Quit"),
 ]
+#Adding just a menu here won't give you much else than a option inside of the main menu. Won't send you anywhere if you don't also make it function.
 
 W = N = H = G = Y = B = 0
 
@@ -62,7 +67,7 @@ def bar(s, txt):
 def header(s):
     _, w = s.getmaxyx()
     put(s, 0, 2, "Stainless-Installer", N | curses.A_BOLD)
-    put(s, 0, w - 12, "v0.1  1/4/26", N)
+    put(s, 0, w - 12, "v0.1  1/4/26", N) # Please do not as a contributor change these, let the Installer Repo Management handle this whenever they release a new version - Kenraali
     put(s, 1, 0, "-" * (w - 1), N)
 
 def menu(s, title, items, descs=None, toggle=False, checked=None):
@@ -94,7 +99,7 @@ def menu(s, title, items, descs=None, toggle=False, checked=None):
                     if dx > len(line) + 6:
                         put(s, y, dx, descs[idx], N | curses.A_DIM)
 
-        hint = "↑up/down↓  ↳ enter=select  esc=back  (1 max)" if toggle else "↑up/down↓  ↳ enter=select  esc=back"
+        hint = "↑up/down↓  ↳ enter=select  esc=back" if toggle else "↑up/down↓  ↳ enter=select  esc=back"
         bar(s, hint)
         s.refresh()
         k = s.getch()
@@ -121,6 +126,7 @@ def menu(s, title, items, descs=None, toggle=False, checked=None):
             if toggle and checked is not None:
                 checked.clear(); checked.update(chk)
             return -1
+
 
 
 def input_box(s, prompt, secret=False):
@@ -252,7 +258,7 @@ def do_timezone(s, tz):
             else:
                 put(s, 4 + i, 2, line, G if idx in chk else W)
 
-        bar(s, "up/down  enter/space=select  esc=back  (pick one)")
+        bar(s, "↑up/down↓  ↳ enter=select  esc=back  (1 max)")
         s.refresh()
         k = s.getch()
 
@@ -327,4 +333,4 @@ try:
     curses.wrapper(main)
 except KeyboardInterrupt:
     pass
-print("\nStainless-Installer exited.\n")
+print("\nStainless-Installer exited. No changes made.\n")
