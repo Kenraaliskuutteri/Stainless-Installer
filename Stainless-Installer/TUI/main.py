@@ -29,10 +29,16 @@ MENU = [
     ("packages",  "Select packages"),
     ("users",     "Manage users"),
     ("timezone",  "Select timezone"),
+    ("repos", "Select optional repos"),
     ("install",   "Review and install"),
     ("quit",      "Quit"),
 ]
 #Adding just a menu here won't give you much else than a option inside of the main menu. Won't send you anywhere if you don't also make it function.
+
+REPOS = [
+    "Sorry dude, work in process :D, still need to figure out how to do this in a good way. If you have any ideas, please do share them as a PR :D"
+]
+#Yeah. Its simple? Extra repositories wouldn't even be too necessary. So we vibe.
 
 W = N = H = G = Y = B = 0
 
@@ -274,9 +280,17 @@ def do_timezone(s, tz):
             tz.append(TIMEZONES[sel])
         elif k == 27:
             return
+        
+def do_repos(s, repos):
+    chk = {i for i, r in enumerate(REPOS) if r in repos}
+    menu(s, "Select optional repositories", REPOS, toggle=True, checked=chk)
+    repos.clear()
+    for i, r in enumerate(REPOS):
+        if i in chk:
+            repos.add(r)
 
 
-def do_install(s, selected):
+def do_install(s, selected, users, tz):
     if not selected:
         notice(s, ["No packages selected.", "Go back and pick something.", "", "press any key..."]); return
     pkgs = sorted(selected)
@@ -285,7 +299,7 @@ def do_install(s, selected):
         choice = menu(s, f"Ready to install  ({len(pkgs)} packages)", items)
         if choice == -1: return
         if choice == len(pkgs) + 1:
-            run_install(s, pkgs); return
+            run_install(s, pkgs, users, tz); return
 
 
 def run_install(s, pkgs, users, tz):
@@ -308,13 +322,14 @@ def run_install(s, pkgs, users, tz):
 def main(s):
     colors()
     curses.curs_set(0)
-    selected, users, tz = set(), [], []
+    selected, users, tz, repos = set(), [], [], set()
 
     while True:
         descs = [
             f"{len(selected)} packages selected",
             ", ".join(u["name"] for u in users) or "no users added",
             tz[0] if tz else "not set",
+            "Optional if you wish to add extra repo's",
             "Review and start the install",
             "Exit",
         ]
@@ -324,7 +339,8 @@ def main(s):
         if action == "packages":   do_packages(s, selected)
         elif action == "users":    do_users(s, users)
         elif action == "timezone": do_timezone(s, tz)
-        elif action == "install":  do_install(s, selected)
+        elif action == "repos": do_repos(s, repos)
+        elif action == "install":  do_install(s, selected, users, tz)
         elif action == "quit":
             if yesno(s, "Quit? Nothing has been written to disk."): break
 
