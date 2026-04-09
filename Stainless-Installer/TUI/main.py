@@ -1,51 +1,75 @@
 #!/usr/bin/env python3
 from config import write_config
 import os, curses, re
+
 os.environ.setdefault("ESCDELAY", "10")
 
 PACKAGES = {
-    "Base System":        ["base", "base-devel", "linux", "linux-firmware", "linux-headers"],
-    "Desktop":            ["xfce4", "i3-wm"],
-    "Network":            ["networkmanager", "openssh", "wget", "curl", "nftables", "connman"],
-    "Filesystem Tools":   ["btrfs-progs", "e2fsprogs", "dosfstools", "exfatprogs"],
-    "Bootloader":         ["grub"],
-    "Multimedia":         ["pipewire", "wireplumber", "ffmpeg", "vlc"],
-    "Browsers":           ["firefox", "librewolf"],
-    "Tools":              ["emacs", "vim", "vscodium", "git"], 
+    "Base System": ["base", "base-devel", "linux", "linux-firmware", "linux-headers"],
+    "Desktop": ["xfce4", "i3-wm"],
+    "Network": ["networkmanager", "openssh", "wget", "curl", "nftables", "connman"],
+    "Filesystem Tools": ["btrfs-progs", "e2fsprogs", "dosfstools", "exfatprogs"],
+    "Bootloader": ["grub"],
+    "Multimedia": ["pipewire", "wireplumber", "ffmpeg", "vlc"],
+    "Browsers": ["firefox", "librewolf"],
+    "Tools": ["emacs", "vim", "vscodium", "git"],
 }
 
-#To add a package you just write in "Package-list":              ["package"], or if you want multiple you can also do "Package-list":              ["package1", "package2"],
-#Shouldn't be too hard i guess.
+# To add a package you just write in "Package-list":              ["package"], or if you want multiple you can also do "Package-list":              ["package1", "package2"],
+# Shouldn't be too hard i guess.
 
 TIMEZONES = [
-    "UTC-12", "UTC-11", "UTC-10", "UTC-9",  "UTC-8",  "UTC-7",  "UTC-6",
-    "UTC-5",  "UTC-4",  "UTC-3",  "UTC-2",  "UTC-1",  "UTC+0",  "UTC+1",
-    "UTC+2",  "UTC+3",  "UTC+4",  "UTC+5",  "UTC+5:30","UTC+6", "UTC+7",
-    "UTC+8",  "UTC+9",  "UTC+10", "UTC+11", "UTC+12",
+    "UTC-12",
+    "UTC-11",
+    "UTC-10",
+    "UTC-9",
+    "UTC-8",
+    "UTC-7",
+    "UTC-6",
+    "UTC-5",
+    "UTC-4",
+    "UTC-3",
+    "UTC-2",
+    "UTC-1",
+    "UTC+0",
+    "UTC+1",
+    "UTC+2",
+    "UTC+3",
+    "UTC+4",
+    "UTC+5",
+    "UTC+5:30",
+    "UTC+6",
+    "UTC+7",
+    "UTC+8",
+    "UTC+9",
+    "UTC+10",
+    "UTC+11",
+    "UTC+12",
 ]
-#I am sure that this should be pretty self explained. If you are going to contribute and add forexample countries to the next of the timezone. Do: "UTC+(time), (country)"
+# I am sure that this should be pretty self explained. If you are going to contribute and add forexample countries to the next of the timezone. Do: "UTC+(time), (country)"
 
 MENU = [
-    ("packages",  "Select packages"),
-    ("users",     "Manage users"),
-    ("timezone",  "Select timezone"),
-    ("install",   "Review and install"),
-    ("quit",      "Quit"),
+    ("packages", "Select packages"),
+    ("users", "Manage users"),
+    ("timezone", "Select timezone"),
+    ("install", "Review and install"),
+    ("quit", "Quit"),
 ]
-#Adding just a menu here won't give you much else than a option inside of the main menu. Won't send you anywhere if you don't also make it function.
+# Adding just a menu here won't give you much else than a option inside of the main menu. Won't send you anywhere if you don't also make it function.
 
 W = N = H = G = Y = B = 0
+
 
 def colors():
     global W, N, H, G, Y, B
     curses.start_color()
     curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_WHITE,  -1)
-    curses.init_pair(2, curses.COLOR_BLACK,  curses.COLOR_CYAN)
-    curses.init_pair(3, curses.COLOR_CYAN,   -1)
-    curses.init_pair(4, curses.COLOR_GREEN,  -1)
+    curses.init_pair(1, curses.COLOR_WHITE, -1)
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_CYAN)
+    curses.init_pair(3, curses.COLOR_CYAN, -1)
+    curses.init_pair(4, curses.COLOR_GREEN, -1)
     curses.init_pair(5, curses.COLOR_YELLOW, -1)
-    curses.init_pair(6, curses.COLOR_RED,    -1)
+    curses.init_pair(6, curses.COLOR_RED, -1)
     W = curses.color_pair(1)
     H = curses.color_pair(2) | curses.A_BOLD
     N = curses.color_pair(3)
@@ -53,22 +77,32 @@ def colors():
     Y = curses.color_pair(5)
     B = curses.color_pair(6)
 
+
 def put(w, y, x, t, a=0):
     mh, mw = w.getmaxyx()
     if 0 <= y < mh and 0 <= x < mw:
-        try: w.addstr(y, x, t[:mw - x - 1], a)
-        except curses.error: pass
+        try:
+            w.addstr(y, x, t[: mw - x - 1], a)
+        except curses.error:
+            pass
+
 
 def bar(s, txt):
     h, w = s.getmaxyx()
-    try: s.addstr(h-1, 0, (" " + txt).ljust(w-1)[:w-1], curses.color_pair(2))
-    except curses.error: pass
+    try:
+        s.addstr(h - 1, 0, (" " + txt).ljust(w - 1)[: w - 1], curses.color_pair(2))
+    except curses.error:
+        pass
+
 
 def header(s):
     _, w = s.getmaxyx()
     put(s, 0, 2, "Stainless-Installer", N | curses.A_BOLD)
-    put(s, 0, w - 12, "v0.1  1/4/26", N) # Please do not as a contributor change these, let the Installer Repo Management handle this whenever they release a new version - Kenraali
+    put(
+        s, 0, w - 12, "v0.1  1/4/26", N
+    )  # Please do not as a contributor change these, let the Installer Repo Management handle this whenever they release a new version - Kenraali
     put(s, 1, 0, "-" * (w - 1), N)
+
 
 def menu(s, title, items, descs=None, toggle=False, checked=None):
     curses.curs_set(0)
@@ -86,7 +120,8 @@ def menu(s, title, items, descs=None, toggle=False, checked=None):
 
         for i in range(rows):
             idx = scroll + i
-            if idx >= len(items): break
+            if idx >= len(items):
+                break
             y = 4 + i
             mark = ("[*] " if idx in chk else "[ ] ") if toggle else ""
             line = mark + items[idx]
@@ -99,34 +134,43 @@ def menu(s, title, items, descs=None, toggle=False, checked=None):
                     if dx > len(line) + 6:
                         put(s, y, dx, descs[idx], N | curses.A_DIM)
 
-        hint = "↑up/down↓  ↳ enter=select  esc=back" if toggle else "↑up/down↓  ↳ enter=select  esc=back"
+        hint = (
+            "↑up/down↓  ↳ enter=select  esc=back"
+            if toggle
+            else "↑up/down↓  ↳ enter=select  esc=back"
+        )
         bar(s, hint)
         s.refresh()
         k = s.getch()
 
         if k == curses.KEY_UP and sel > 0:
             sel -= 1
-            if sel < scroll: scroll -= 1
+            if sel < scroll:
+                scroll -= 1
         elif k == curses.KEY_DOWN and sel < len(items) - 1:
             sel += 1
-            if sel >= scroll + rows: scroll += 1
+            if sel >= scroll + rows:
+                scroll += 1
         elif k == curses.KEY_HOME:
             sel = scroll = 0
         elif k == curses.KEY_END:
             sel = len(items) - 1
             scroll = max(0, sel - rows + 1)
-        elif k in (ord(' '), 10, 13, curses.KEY_ENTER) and toggle:
-            if sel in chk: chk.discard(sel)
-            else: chk.add(sel)
+        elif k in (ord(" "), 10, 13, curses.KEY_ENTER) and toggle:
+            if sel in chk:
+                chk.discard(sel)
+            else:
+                chk.add(sel)
             if checked is not None:
-                checked.clear(); checked.update(chk)
+                checked.clear()
+                checked.update(chk)
         elif k in (10, 13, curses.KEY_ENTER):
             return sel
         elif k == 27:
             if toggle and checked is not None:
-                checked.clear(); checked.update(chk)
+                checked.clear()
+                checked.update(chk)
             return -1
-
 
 
 def input_box(s, prompt, secret=False):
@@ -136,7 +180,8 @@ def input_box(s, prompt, secret=False):
     win.keypad(True)
     val = []
     while True:
-        win.erase(); win.box()
+        win.erase()
+        win.box()
         put(win, 0, 2, " input ", N | curses.A_BOLD)
         put(win, 2, 2, prompt, W | curses.A_BOLD)
         put(win, 3, 2, ("*" * len(val) if secret else "".join(val)) + " ", Y)
@@ -144,11 +189,15 @@ def input_box(s, prompt, secret=False):
         curses.curs_set(1)
         k = win.getch()
         curses.curs_set(0)
-        if k in (10, 13, curses.KEY_ENTER): return "".join(val)
-        elif k == 27: return None
+        if k in (10, 13, curses.KEY_ENTER):
+            return "".join(val)
+        elif k == 27:
+            return None
         elif k in (curses.KEY_BACKSPACE, 127, 8):
-            if val: val.pop()
-        elif 32 <= k <= 126: val.append(chr(k))
+            if val:
+                val.pop()
+        elif 32 <= k <= 126:
+            val.append(chr(k))
 
 
 def yesno(s, question):
@@ -162,8 +211,10 @@ def yesno(s, question):
     win.refresh()
     while True:
         k = s.getch()
-        if k in (ord('y'), ord('Y')): return True
-        if k in (ord('n'), ord('N'), 27): return False
+        if k in (ord("y"), ord("Y")):
+            return True
+        if k in (ord("n"), ord("N"), 27):
+            return False
 
 
 def notice(s, lines, color=None):
@@ -181,59 +232,97 @@ def notice(s, lines, color=None):
 def do_packages(s, selected):
     groups = list(PACKAGES.keys())
     while True:
-        choice = menu(s, "Package groups", groups, [f"{len(PACKAGES[g])} packages" for g in groups])
-        if choice == -1: return
+        choice = menu(
+            s,
+            "Package groups",
+            groups,
+            [f"{len(PACKAGES[g])} packages" for g in groups],
+        )
+        if choice == -1:
+            return
         g = groups[choice]
         pkgs = PACKAGES[g]
         chk = {i for i, p in enumerate(pkgs) if p in selected}
         menu(s, g, pkgs, toggle=True, checked=chk)
         for i, p in enumerate(pkgs):
-            if i in chk: selected.add(p)
-            else: selected.discard(p)
+            if i in chk:
+                selected.add(p)
+            else:
+                selected.discard(p)
 
 
 def do_users(s, users):
     while True:
-        items = [f"{'[root]' if u['root'] else '      '}  {u['name']}" for u in users] + ["  + add user"]
-        descs = ["password set" if u["password"] else "no password" for u in users] + [""]
+        items = [
+            f"{'[root]' if u['root'] else '      '}  {u['name']}" for u in users
+        ] + ["  + add user"]
+        descs = ["password set" if u["password"] else "no password" for u in users] + [
+            ""
+        ]
         choice = menu(s, "User accounts", items, descs)
-        if choice == -1: return
-        if choice == len(users): add_user(s, users)
-        else: edit_user(s, users, choice)
+        if choice == -1:
+            return
+        if choice == len(users):
+            add_user(s, users)
+        else:
+            edit_user(s, users, choice)
 
 
 def add_user(s, users):
     name = input_box(s, "Username:")
-    if not name: return
-    if not re.match(r'^[a-z_][a-z0-9_-]*$', name):
-        notice(s, ["Invalid username.", "Use lowercase letters, digits, _ or -", "", "press any key..."], B); return
+    if not name:
+        return
+    if not re.match(r"^[a-z_][a-z0-9_-]*$", name):
+        notice(
+            s,
+            [
+                "Invalid username.",
+                "Use lowercase letters, digits, _ or -",
+                "",
+                "press any key...",
+            ],
+            B,
+        )
+        return
     if any(u["name"] == name for u in users):
-        notice(s, [f"'{name}' already exists.", "", "press any key..."], B); return
+        notice(s, [f"'{name}' already exists.", "", "press any key..."], B)
+        return
     pw1 = input_box(s, f"Password for {name}:", secret=True)
-    if pw1 is None: return
+    if pw1 is None:
+        return
     pw2 = input_box(s, "Confirm password:", secret=True)
-    if pw2 is None: return
+    if pw2 is None:
+        return
     if pw1 != pw2:
-        notice(s, ["Passwords do not match.", "", "press any key..."], B); return
+        notice(s, ["Passwords do not match.", "", "press any key..."], B)
+        return
     root = yesno(s, f"Give {name} sudo / root access?")
     users.append({"name": name, "password": pw1, "root": root})
 
 
 def edit_user(s, users, idx):
     u = users[idx]
-    choice = menu(s, f"Edit: {u['name']}", ["Change password", "Toggle root", "Delete user"])
-    if choice == -1: return
+    choice = menu(
+        s, f"Edit: {u['name']}", ["Change password", "Toggle root", "Delete user"]
+    )
+    if choice == -1:
+        return
     if choice == 0:
         pw1 = input_box(s, "New password:", secret=True)
-        if pw1 is None: return
+        if pw1 is None:
+            return
         pw2 = input_box(s, "Confirm password:", secret=True)
-        if pw2 is None: return
-        if pw1 != pw2: notice(s, ["Passwords do not match.", "", "press any key..."], B); return
+        if pw2 is None:
+            return
+        if pw1 != pw2:
+            notice(s, ["Passwords do not match.", "", "press any key..."], B)
+            return
         u["password"] = pw1
     elif choice == 1:
         u["root"] = not u["root"]
     elif choice == 2:
-        if yesno(s, f"Delete '{u['name']}'?"): users.pop(idx)
+        if yesno(s, f"Delete '{u['name']}'?"):
+            users.pop(idx)
 
 
 def do_timezone(s, tz):
@@ -250,7 +339,8 @@ def do_timezone(s, tz):
 
         for i in range(rows):
             idx = scroll + i
-            if idx >= len(TIMEZONES): break
+            if idx >= len(TIMEZONES):
+                break
             mark = "[*] " if idx in chk else "[ ] "
             line = mark + TIMEZONES[idx]
             if idx == sel:
@@ -264,11 +354,13 @@ def do_timezone(s, tz):
 
         if k == curses.KEY_UP and sel > 0:
             sel -= 1
-            if sel < scroll: scroll -= 1
+            if sel < scroll:
+                scroll -= 1
         elif k == curses.KEY_DOWN and sel < len(TIMEZONES) - 1:
             sel += 1
-            if sel >= scroll + rows: scroll += 1
-        elif k in (ord(' '), 10, 13, curses.KEY_ENTER):
+            if sel >= scroll + rows:
+                scroll += 1
+        elif k in (ord(" "), 10, 13, curses.KEY_ENTER):
             chk = {sel}
             tz.clear()
             tz.append(TIMEZONES[sel])
@@ -278,31 +370,47 @@ def do_timezone(s, tz):
 
 def do_install(s, selected):
     if not selected:
-        notice(s, ["No packages selected.", "Go back and pick something.", "", "press any key..."]); return
+        notice(
+            s,
+            [
+                "No packages selected.",
+                "Go back and pick something.",
+                "",
+                "press any key...",
+            ],
+        )
+        return
     pkgs = sorted(selected)
     items = ["  " + p for p in pkgs] + ["", "  -> begin installation"]
     while True:
         choice = menu(s, f"Ready to install  ({len(pkgs)} packages)", items)
-        if choice == -1: return
+        if choice == -1:
+            return
         if choice == len(pkgs) + 1:
-            run_install(s, pkgs); return
+            run_install(s, pkgs)
+            return
 
 
 def run_install(s, pkgs, users, tz):
     write_config(pkgs, users, tz)
     h, _ = s.getmaxyx()
-    s.erase(); header(s)
+    s.erase()
+    header(s)
     put(s, 2, 2, "Installing...", W | curses.A_BOLD)
     put(s, 3, 0, "-" * (_ - 1), N)
     s.refresh()
     for i, p in enumerate(pkgs):
         row = 4 + i
-        if row >= h - 2: break
-        put(s, row, 4, p, W | curses.A_DIM); s.refresh()
+        if row >= h - 2:
+            break
+        put(s, row, 4, p, W | curses.A_DIM)
+        s.refresh()
         curses.napms(80)
-        put(s, row, 2, "ok", G | curses.A_BOLD); s.refresh()
+        put(s, row, 2, "ok", G | curses.A_BOLD)
+        s.refresh()
     put(s, min(4 + len(pkgs) + 1, h - 2), 2, "Done.  Press any key.", N | curses.A_BOLD)
-    s.refresh(); s.getch()
+    s.refresh()
+    s.getch()
 
 
 def main(s):
@@ -319,14 +427,20 @@ def main(s):
             "Exit",
         ]
         choice = menu(s, "Main menu", [m[1] for m in MENU], descs)
-        if choice == -1: continue
+        if choice == -1:
+            continue
         action = MENU[choice][0]
-        if action == "packages":   do_packages(s, selected)
-        elif action == "users":    do_users(s, users)
-        elif action == "timezone": do_timezone(s, tz)
-        elif action == "install":  do_install(s, selected)
+        if action == "packages":
+            do_packages(s, selected)
+        elif action == "users":
+            do_users(s, users)
+        elif action == "timezone":
+            do_timezone(s, tz)
+        elif action == "install":
+            do_install(s, selected)
         elif action == "quit":
-            if yesno(s, "Quit? Nothing has been written to disk."): break
+            if yesno(s, "Quit? Nothing has been written to disk."):
+                break
 
 
 try:
