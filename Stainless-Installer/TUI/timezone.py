@@ -1,31 +1,5 @@
-from main import menu, yesno, header, input_box, notice
+from ui import menu, yesno, header, input_box, notice
 import curses, re
-
-# Color pair constants
-W = curses.COLOR_WHITE
-N = curses.COLOR_WHITE
-H = curses.A_REVERSE
-G = curses.COLOR_GREEN
-
-def header(s):
-    """Display header at the top of the screen."""
-    pass
-
-def put(s, y, x, text, attr=0):
-    """Put text at position (y, x) with given attributes."""
-    try:
-        s.addstr(y, x, text, attr)
-    except curses.error:
-        pass
-
-def bar(s, text):
-    """Display a status bar at the bottom of the screen."""
-    h, w = s.getmaxyx()
-    try:
-        s.addstr(h - 1, 0, text.ljust(w - 1), curses.A_REVERSE)
-    except curses.error:
-        pass
-
 
 
 TIMEZONES = [
@@ -57,6 +31,43 @@ TIMEZONES = [
     "UTC+12",
 ]
 # I am sure that this should be pretty self explained. If you are going to contribute and add forexample countries to the next of the timezone. Do: "UTC+(time), (country)"
+
+W = N = H = G = Y = B = 0
+
+
+def colors():
+    global W, N, H, G, Y, B
+    curses.start_color()
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_WHITE, -1)
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_CYAN)
+    curses.init_pair(3, curses.COLOR_CYAN, -1)
+    curses.init_pair(4, curses.COLOR_GREEN, -1)
+    curses.init_pair(5, curses.COLOR_YELLOW, -1)
+    curses.init_pair(6, curses.COLOR_RED, -1)
+    W = curses.color_pair(1)
+    H = curses.color_pair(2) | curses.A_BOLD
+    N = curses.color_pair(3)
+    G = curses.color_pair(4)
+    Y = curses.color_pair(5)
+    B = curses.color_pair(6)
+
+
+def put(w, y, x, t, a=0):
+    mh, mw = w.getmaxyx()
+    if 0 <= y < mh and 0 <= x < mw:
+        try:
+            w.addstr(y, x, t[: mw - x - 1], a)
+        except curses.error:
+            pass
+
+
+def bar(s, txt):
+    h, w = s.getmaxyx()
+    try:
+        s.addstr(h - 1, 0, (" " + txt).ljust(w - 1)[: w - 1], curses.color_pair(2))
+    except curses.error:
+        pass
 
 def do_timezone(s, tz):
     chk = {TIMEZONES.index(tz[0])} if tz else set()

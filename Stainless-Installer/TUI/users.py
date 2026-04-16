@@ -1,6 +1,5 @@
 import re
-
-from main import menu, yesno, header, input_box, notice, B
+from ui import menu, yesno, header, input_box, notice, B
 
 def do_users(s, users):
     while True:
